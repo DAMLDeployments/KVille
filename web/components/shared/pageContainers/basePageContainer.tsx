@@ -5,35 +5,42 @@ import { Container, Typography } from '@mui/material';
 
 import { KvilleLoggedInNavBar } from '../navBars/loggedInNavBar';
 import { KvilleLoggedOutNavBar } from '../navBars/loggedOutNavBar';
-import { auth } from '@/lib/db/firebase_config';
-import { onAuthStateChanged } from 'firebase/auth';
-import { INVALID_USER_ID } from '@/lib/db/auth/login';
 import Footer from '../utils/footer';
+import {useSession} from "next-auth/react";
+import { INVALID_USER_ID } from '@/lib/controllers/auth/loginControllers';
 
 interface BasePageContainerProps {
     children: ReactNode;
 };
 
 
+interface sessionDataType {
+	user : UserType;
+}
+interface UserType{
+	name : string;
+	email : string;
+	id : string;
+
+}
 export const BasePageContainer: React.FC<BasePageContainerProps> = (props:BasePageContainerProps) => {
 	const {setUserID, setIsLoggedIn, setTriedToLogIn} = useContext(UserContext);
 
-	useEffect(() => {
-		const unsubscribe = onAuthStateChanged(auth, (user) => {
-			if (auth.currentUser){
-				const id = auth.currentUser.uid;
-				setUserID(id);
-				setIsLoggedIn(true);
-			} else {
-				setUserID(INVALID_USER_ID);
-				setIsLoggedIn(false);
-			}
-			setTriedToLogIn(true);
-			
-		})
+	const {data} = useSession();
 
-		return () => unsubscribe();
-	});
+
+	useEffect(() => {
+		if (data && data.user && data.user.name && data.user.name !== INVALID_USER_ID){
+			setUserID(data.user.name);
+			setIsLoggedIn(true);
+			setTriedToLogIn(true);
+		} else {
+			setIsLoggedIn(false);
+			setTriedToLogIn(false);
+			setUserID(INVALID_USER_ID);
+		}
+	}, [data]);
+
 	
 	return (
 		<div
